@@ -43,19 +43,45 @@ def is_palindrome(string):
 async def on_ready():
     print("login success")
 
+# ------------------------------ functions -------------------------------------
+async def how_to(message):
+    reply = f"""
+    {message.author.mention}
+    【使い方】
+
+    ・/[str]: strのアナグラムを生成します。
+
+
+    ・[prime_number]: 素数であることを指摘してくれます。
+    """
+    await message.channel.send(reply)
+
+# ------------------------------ main process ----------------------------------
 @client.event
 async def on_message(message):
+    if message.author.name != "mitsu":
+        return
+    print(message.author.name)
+    print(message.author.id)
+
+    # message.content = message.content.strip()
     if message.author.bot:
         return
 
+    if client.user in message.mentions:
+        await how_to(message)
+        return
+
     if len(message.content) >= 1 and message.content.isnumeric() and MR(int(message.content)):
-        rep = f"{message.author.mention} 素数ですね…。"
+        rep = f"{message.author.mention} 素数ですね……。"
         await message.channel.send(rep)
     
     if len(message.content) > 1 and is_palindrome(message.content) == 0:
         rep = f"{message.author.mention} 回文です。"
         await message.channel.send(rep)
         return
+
+    # if len(message.content) >= 1 and 
 
     if len(message.content) >= 1 and message.content[0] == "/":
         st = message.content[1:]

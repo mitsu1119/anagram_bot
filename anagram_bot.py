@@ -1,6 +1,7 @@
 import discord
 import string
 import random
+import time
 import os
 
 TOKEN = os.environ["DISCORD_BOT_TOKEN"]
@@ -39,11 +40,11 @@ def sh(st):
 def is_palindrome(string):
     return string.find(string[::-1])
 
+# ------------------------------ functions -------------------------------------
 @client.event
 async def on_ready():
     print("login success")
 
-# ------------------------------ functions -------------------------------------
 async def how_to(message):
     reply = f"""
     {message.author.mention}
@@ -53,22 +54,44 @@ async def how_to(message):
 
 
     ・[prime_number]: 素数であることを指摘してくれます。
+
+    ・だまれ @hoge: hogeのメッセージを約30秒間逐次削除してくれます。連続で同じ人を黙らせようとすると……？一分位間を開ければ見逃してくれるかもしれません。
     """
     await message.channel.send(reply)
+
+silent_now = None
+silent_time = 0
+async def silent(silent_user, speaker, channel):
+    global silent_now
+    global silent_time
+
+    if silent_now == None:
+        silent_now = silent_user
+        silent_time = time.time()
+        return
+
+async def delete(message):
+    global silent_now
+    global silent_time
+
+    if time.time() >= silent_time + 30:
+        silent_now = None
+        silent_time = 0
+        return
+    await message.delete()
 
 # ------------------------------ main process ----------------------------------
 @client.event
 async def on_message(message):
-    if message.author.name != "mitsu":
-        return
-    print(message.author.name)
-    print(message.author.id)
-
-    # message.content = message.content.strip()
     if message.author.bot:
         return
 
-    if client.user in message.mentions:
+    if message.author == silent_now:
+        await delete(message)
+        return
+
+    messages = message.content.split()
+    if client.user in message.mentions and len(messages) == 1:
         await how_to(message)
         return
 
@@ -79,9 +102,11 @@ async def on_message(message):
     if len(message.content) > 1 and is_palindrome(message.content) == 0:
         rep = f"{message.author.mention} 回文です。"
         await message.channel.send(rep)
-        return
 
-    # if len(message.content) >= 1 and 
+    if len(messages) == 2 and messages[0] == "だまれ":
+        if message.mentions[0] in client.users:
+            await silent(message.mentions[0], message.author, message.channel)
+            return
 
     if len(message.content) >= 1 and message.content[0] == "/":
         st = message.content[1:]

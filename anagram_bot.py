@@ -55,7 +55,7 @@ async def how_to(message):
 
     ・[prime_number]: 素数であることを指摘してくれます。
 
-    ・だまれ @hoge: hogeのメッセージを約30秒間逐次削除してくれます。連続で同じ人を黙らせようとすると……？一分位間を開ければ見逃してくれるかもしれません。
+    ・だまれ @hoge: hogeのメッセージを約30秒間逐次削除してくれます。
     """
     await message.channel.send(reply)
 

@@ -46,16 +46,16 @@ async def on_ready():
     print("login success")
 
 async def how_to(message):
-    reply = """
+    reply = f"""
     {message.author.mention}
     【使い方】
     ・/[str]: strのアナグラムを生成します。空白区切りで複数のアナグラムを作成できます。
     ・[palindrome]: 回文であることを指摘してくれます。
-    ・{prime_number}: 素数であることを指摘してくれます。
+    ・{{prime_number}}: 素数であることを指摘してくれます。
 
     【コマンドの見方】
     []でくくられた変数に関するコマンドは、その前後にある文章の条件に合致したときのみbotが動きます。
-    {}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
+    {{}}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
     """
     await message.channel.send(reply)
 
@@ -66,6 +66,9 @@ async def on_message(message):
         return
 
     m = message.content
+    if len(m) == 0:
+        return
+
     messages = m.split()
 
     if client.user in message.mentions and len(messages) == 1:
@@ -97,7 +100,6 @@ async def on_message(message):
                 digits += m[cnt]
                 cnt += 1
             cnt -= 1
-            print(digits)
         else:
             if digits != "" and MR(int(digits)):
                 rep = f"{message.author.mention} 素数ですね……。"

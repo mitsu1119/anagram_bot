@@ -46,11 +46,16 @@ async def on_ready():
     print("login success")
 
 async def how_to(message):
-    reply = f"""
+    reply = """
     {message.author.mention}
     【使い方】
-    ・/[str]: strのアナグラムを生成します。
-    ・[prime_number]: 素数であることを指摘してくれます。
+    ・/[str]: strのアナグラムを生成します。空白区切りで複数のアナグラムを作成できます。
+    ・[palindrome]: 回文であることを指摘してくれます。
+    ・{prime_number}: 素数であることを指摘してくれます。
+
+    【コマンドの見方】
+    []でくくられた変数に関するコマンドは、その前後にある文章の条件に合致したときのみbotが動きます。
+    {}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
     """
     await message.channel.send(reply)
 
@@ -60,21 +65,16 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    messages = message.content.split()
+    m = message.content
+    messages = m.split()
+
     if client.user in message.mentions and len(messages) == 1:
         await how_to(message)
         return
 
-    if len(message.content) >= 1 and message.content.isnumeric() and MR(int(message.content)):
-        rep = f"{message.author.mention} 素数ですね……。"
-        await message.channel.send(rep)
-    
-    if len(message.content) > 1 and is_palindrome(message.content) == 0:
-        rep = f"{message.author.mention} 回文です。"
-        await message.channel.send(rep)
-
-    if len(message.content) >= 1 and message.content[0] == "/":
-        st = message.content[1:]
+    # anagram
+    if m[0] == "/":
+        st = m[1:]
         st = st.split(" ")
         res = []
         for i in st:
@@ -82,4 +82,28 @@ async def on_message(message):
         await message.channel.send(" ".join(res))
         return
 
+    # palindrome
+    if len(m) > 1 and is_palindrome(m) == 0:
+        rep = f"{message.author.mention} 回文です。"
+        await message.channel.send(rep)
+
+    # prime number
+    m += "\x00"
+    cnt = 0
+    digits = ""
+    while cnt < len(m):
+        if m[cnt].isdigit():
+            while m[cnt].isdigit():
+                digits += m[cnt]
+                cnt += 1
+            cnt -= 1
+            print(digits)
+        else:
+            if digits != "" and MR(int(digits)):
+                rep = f"{message.author.mention} 素数ですね……。"
+                await message.channel.send(rep)
+            digits = ""
+        cnt += 1
+    m = m[:-1]
+    
 client.run(TOKEN)

@@ -49,45 +49,15 @@ async def how_to(message):
     reply = f"""
     {message.author.mention}
     【使い方】
-
     ・/[str]: strのアナグラムを生成します。
-
-
     ・[prime_number]: 素数であることを指摘してくれます。
-
-    ・だまれ @hoge: hogeのメッセージを約30秒間逐次削除してくれます。
     """
     await message.channel.send(reply)
-
-silent_now = None
-silent_time = 0
-async def silent(silent_user, speaker, channel):
-    global silent_now
-    global silent_time
-
-    if silent_now == None:
-        silent_now = silent_user
-        silent_time = time.time()
-        return
-
-async def delete(message):
-    global silent_now
-    global silent_time
-
-    if time.time() >= silent_time + 30:
-        silent_now = None
-        silent_time = 0
-        return
-    await message.delete()
 
 # ------------------------------ main process ----------------------------------
 @client.event
 async def on_message(message):
     if message.author.bot:
-        return
-
-    if message.author == silent_now:
-        await delete(message)
         return
 
     messages = message.content.split()
@@ -102,11 +72,6 @@ async def on_message(message):
     if len(message.content) > 1 and is_palindrome(message.content) == 0:
         rep = f"{message.author.mention} 回文です。"
         await message.channel.send(rep)
-
-    if len(messages) == 2 and messages[0] == "だまれ":
-        if message.mentions[0] in client.users:
-            await silent(message.mentions[0], message.author, message.channel)
-            return
 
     if len(message.content) >= 1 and message.content[0] == "/":
         st = message.content[1:]

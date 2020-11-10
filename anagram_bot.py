@@ -128,7 +128,7 @@ async def gacha(args, message):
     if len(args) > 1 and args[1] == "help":
         reply = f"""{message.author.mention}
 !gacha [OPTION]
-  3{point_name}で単発ガチャを引かせてくれます。まとめて10回分引けば11連できます。出てくるキャラの属性は火、水、風、土、闇、光のいずれかで確率は一様です。
+  3{point_name}で単発ガチャを引かせてくれます。まとめて10回分引けば11連できます。出てくるキャラの属性は火、水、風、土、闇、光のいずれかで確率は一様です。また、ポイントについてはメッセージをどこかに投稿する毎に1{point_name}手に入れることができます。
 
   [OPTION]
  help:   ヘルプを表示します

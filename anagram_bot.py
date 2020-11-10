@@ -242,4 +242,4 @@ async def on_message(message):
     m = m[:-1]
 
 client.run(TOKEN)
-conn.flushall()
+# conn.flushall()

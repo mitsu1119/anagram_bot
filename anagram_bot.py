@@ -8,6 +8,7 @@ TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 client = discord.Client()
 
+# primirity test
 def MR(n):
     if n == 2:
         return True
@@ -32,13 +33,29 @@ def MR(n):
             return False
     return True
 
+# random shuffle
 def sh(st):
     res = list(st)
     random.shuffle(res)
     return "".join(res)
 
+# palindrome test
 def is_palindrome(string):
     return string.find(string[::-1])
+
+# playing gacha 
+def play_gacha():
+    exrate = [40, 30, 22, 5, 3]
+    p = random.randint(1, 100)
+    s = 0
+    for rarity in range(len(exrate)):
+        s += exrate[rarity]
+        if p <= s:
+            break
+    types = ["火", "水", "風", "土", "闇", "光"]
+    t = types[random.randint(0, len(types) - 1)]
+    return rarity + 1, t
+
 
 # ------------------------------ functions -------------------------------------
 @client.event
@@ -49,15 +66,52 @@ async def how_to(message):
     reply = f"""
     {message.author.mention}
     【使い方】
+    ・!gacha
     ・/[str]: strのアナグラムを生成します。空白区切りで複数のアナグラムを作成できます。
     ・[palindrome]: 回文であることを指摘してくれます。
     ・{{prime_number}}: 素数であることを指摘してくれます。
 
     【コマンドの見方】
-    []でくくられた変数に関するコマンドは、その前後にある文章の条件に合致したときのみbotが動きます。
-    {{}}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
+    ・!から始まる機能は、!hoge help とすればその機能の詳細な使い方を表示することができます。
+    ・[]でくくられた変数に関するコマンドは、その前後にある文章の条件に合致したときのみbotが動きます。
+    ・{{}}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
     """
     await message.channel.send(reply)
+
+# args: args[0] = "!gacha", args[1..] = options
+async def gacha(args, message):
+    if len(args) == 1:
+        rarity, t = play_gacha()
+        reply = f"{message.author.mention}\n" + f"({t}) " + "☆" * rarity 
+        await message.channel.send(reply)
+        return
+
+    if args[1] == "10":
+        reply = f"{message.author.mention}"
+        for i in range(11):
+            rarity, t = play_gacha()
+            reply += "\n" + f"({t}) " + "☆" * rarity
+        await message.channel.send(reply)
+        return
+
+    if args[1] == "help":
+        reply = f"""{message.author.mention}
+!gacha [OPTION]
+  ガチャを引かせてくれます。まとめて10回分引けば11連できます。出てくるキャラの属性は火、水、風、土、闇、光のいずれかで確率は一様です。
+
+  [OPTION]
+ help:   ヘルプを表示します
+ 10:     まとめて10回分引きます。
+
+ 【排出率】
+ ☆:      40%
+ ☆☆:     30%
+ ☆☆☆:    22%
+ ☆☆☆☆:    5%
+ ☆☆☆☆☆:   3%
+        """
+        await message.channel.send(reply)
+        return
 
 # ------------------------------ main process ----------------------------------
 @client.event
@@ -73,6 +127,12 @@ async def on_message(message):
 
     if client.user in message.mentions and len(messages) == 1:
         await how_to(message)
+        return
+
+    # function
+    if m[0] == "!":
+        if messages[0] == "!gacha":
+            await gacha(messages, message)
         return
 
     # anagram
@@ -104,6 +164,7 @@ async def on_message(message):
             if digits != "" and MR(int(digits)):
                 rep = f"{message.author.mention} 素数ですね……。"
                 await message.channel.send(rep)
+                break
             digits = ""
         cnt += 1
     m = m[:-1]

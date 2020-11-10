@@ -64,6 +64,12 @@ def play_gacha():
     t = types[random.randint(0, len(types) - 1)]
     return rarity + 1, t
 
+# give user point
+async def give_point(user, point):
+    global signups
+    if user.name in signups:
+        signups[user.name]["point"] += point
+
 
 # ------------------------------ functions -------------------------------------
 @client.event
@@ -168,8 +174,12 @@ async def gacha(args, message):
         return
 
     if len(args) == 1:
-        rarity, t = play_gacha()
-        reply = f"{message.author.mention}\n" + f"({t}) " + "☆" * rarity 
+        if signups[user.name]["point"] < 3:
+            reply = f"{message.author.mention} {point_name}が足りません。"
+        else:
+            rarity, t = play_gacha()
+            reply = f"{message.author.mention}\n" + f"({t}) " + "☆" * rarity 
+            await give_point(user, -3)
         await message.channel.send(reply)
         return
 
@@ -182,9 +192,13 @@ async def gacha(args, message):
 
     if args[1] == "10":
         reply = f"{message.author.mention}"
-        for i in range(11):
-            rarity, t = play_gacha()
-            reply += "\n" + f"({t}) " + "☆" * rarity
+        if signups[user.name]["point"] < 30:
+            reply += f" {point_name}が足りません。"
+        else:
+            for i in range(11):
+                rarity, t = play_gacha()
+                reply += "\n" + f"({t}) " + "☆" * rarity
+            await give_point(user, -30)
         await message.channel.send(reply)
         return
 
@@ -211,6 +225,10 @@ async def on_message(message):
         if messages[0] == "!gacha":
             await gacha(messages, message)
         return
+
+    # give point
+    if message.author.name in signups:
+        await give_point(message.author, 1)
 
     # anagram
     if m[0] == "/":

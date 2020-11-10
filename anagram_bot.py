@@ -101,14 +101,28 @@ async def how_to(message):
     """
     await message.channel.send(reply)
 
-async def signup(user, channel):
+async def signup(args, user, channel):
     global signups
-    if user.name in signups:
-        reply = f"{user.mention} 登録済みです。"
-    else :
-        signups.append(user.name)
-        reply = f"{user.mention} 登録できました。"
-    await channel.send(reply)
+
+    if len(args) == 1:
+        if user.name in signups:
+            reply = f"{user.mention} 登録済みです。"
+        else :
+            signups.append(user.name)
+            reply = f"{user.mention} 登録できました。"
+        await channel.send(reply)
+        return
+
+    if args[1] == "help":
+        reply = f"""{user.mention}
+!signup [OPTION]
+  botへのユーザ登録をしてくれます。ガチャ機能など、ユーザ登録をしないと利用できない機能があります。
+
+  [OPTION]
+ help:  ヘルプを表示します
+ """
+        await channel.send(reply)
+        return
 
 # args: args[0] = "!gacha", args[1..] = options
 async def gacha(args, message):
@@ -164,7 +178,7 @@ async def on_message(message):
     # function
     if m[0] == "!":
         if messages[0] == "!signup":
-            await signup(message.author, message.channel)
+            await signup(messages, message.author, message.channel)
         if messages[0] == "!gacha":
             await gacha(messages, message)
         return

@@ -1,3 +1,4 @@
+import sys
 import discord
 import string
 import random
@@ -5,8 +6,13 @@ import time
 import os
 
 TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+GUILD_ID = int(os.environ["GUILD_ID"])
+DATA_CHANNEL_ID = int(os.environ["DATA_CHANNEL_ID"])
 
 client = discord.Client()
+guild = None
+data_channel = None
+signups = []
 
 # primirity test
 def MR(n):
@@ -60,13 +66,30 @@ def play_gacha():
 # ------------------------------ functions -------------------------------------
 @client.event
 async def on_ready():
+    global guild 
+    global data_channel
+    global signups
+
     print("login success")
 
+    guild = client.get_guild(GUILD_ID)
+    data_channel = guild.get_channel(DATA_CHANNEL_ID)
+
+    msg = await data_channel.fetch_message(data_channel.last_message_id)
+    data_file = msg.attachments[0]
+    buf = await data_file.read()
+    buf = buf.decode("utf-8").splitlines()
+
+    for name in buf:
+        signups.append(name)
+
 async def how_to(message):
+    print(message.guild.members)
     reply = f"""
     {message.author.mention}
     【使い方】
-    ・!gacha
+    ・!signup: 一部の機能を利用するためのユーザ登録ができます。
+    ・!gacha: ガチャが引けます。
     ・/[str]: strのアナグラムを生成します。空白区切りで複数のアナグラムを作成できます。
     ・[palindrome]: 回文であることを指摘してくれます。
     ・{{prime_number}}: 素数であることを指摘してくれます。
@@ -77,6 +100,15 @@ async def how_to(message):
     ・{{}}でくくられた変数に関するコマンドは、メッセージ中のどこにあってもトラップしてbotが動きます。
     """
     await message.channel.send(reply)
+
+async def signup(user, channel):
+    global signups
+    if user.name in signups:
+        reply = f"{user.mention} 登録済みです。"
+    else :
+        signups.append(user.name)
+        reply = f"{user.mention} 登録できました。"
+    await channel.send(reply)
 
 # args: args[0] = "!gacha", args[1..] = options
 async def gacha(args, message):
@@ -131,6 +163,8 @@ async def on_message(message):
 
     # function
     if m[0] == "!":
+        if messages[0] == "!signup":
+            await signup(message.author, message.channel)
         if messages[0] == "!gacha":
             await gacha(messages, message)
         return

@@ -3,19 +3,18 @@ import discord
 import string
 import random
 import time
+import redis
 import os
 
 TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-GUILD_ID = int(os.environ["GUILD_ID"])
-DATA_CHANNEL_ID = int(os.environ["DATA_CHANNEL_ID"])
 point_name = os.environ["POINT_NAME"]
 
 client = discord.Client()
-guild = None
-data_channel = None
-data_names = ["point"]
-signups = {}
 
+# {user: {point: p}}
+conn = redis.from_url(url=os.environ["REDIS_URL"], decode_responses=True)
+
+# ------------------------ utils -----------------------------------------
 # primirity test
 def MR(n):
     if n == 2:
@@ -66,32 +65,14 @@ def play_gacha():
 
 # give user point
 async def give_point(user, point):
-    global signups
-    if user.name in signups:
-        signups[user.name]["point"] += point
-
+    if conn.exists(user.name) != 0:
+        dic = conn.hgetall(user.name)
+        conn.hset(user.name, "point", int(dic["point"]) + point)
 
 # ------------------------------ functions -------------------------------------
 @client.event
 async def on_ready():
-    global guild 
-    global data_channel
-    global signups
-    global data_names
-
     print("login success")
-
-    guild = client.get_guild(GUILD_ID)
-    data_channel = guild.get_channel(DATA_CHANNEL_ID)
-
-    msg = await data_channel.fetch_message(data_channel.last_message_id)
-    data_file = msg.attachments[0]
-    buf = await data_file.read()
-    buf = buf.decode("utf-8").splitlines()
-
-    for data in buf:
-        name, point = data.split()
-        signups[name] = {data_names[0]: int(point)}
 
 async def how_to(message):
     reply = f"""
@@ -111,21 +92,19 @@ async def how_to(message):
     await message.channel.send(reply)
 
 async def signup(args, user, channel):
-    global signups
-    global data_names
-
     if len(args) == 1:
-        if user.name in signups:
+        if conn.exists(user.name) != 0:
             reply = f"{user.mention} 登録済みです。"
         else :
-            signups[user.name] = {data_names[0]: 0}
+            dic = {"point": 0}
+            conn.hset(user.name, "point", 0)
             reply = f"{user.mention} 登録できました。"
         await channel.send(reply)
         return
 
     if args[1] == "list":
         reply = f"{user.mention}"
-        for name in signups.keys():
+        for name in conn.keys():
             reply += f"\n・{name}"
         await channel.send(reply)
         return
@@ -144,8 +123,6 @@ async def signup(args, user, channel):
 
 # args: args[0] = "!gacha", args[1..] = options
 async def gacha(args, message):
-    global point_name
-    global signups
     user = message.author
 
     if len(args) > 1 and args[1] == "help":
@@ -168,13 +145,13 @@ async def gacha(args, message):
         await message.channel.send(reply)
         return
 
-    if not user.name in signups:
+    if conn.exists(user.name) == 0:
         reply = f"{message.author.mention}\n先にユーザ登録をして{point_name}を獲得できる状態にしてください。"
         await message.channel.send(reply)
         return
 
     if len(args) == 1:
-        if signups[user.name]["point"] < 3:
+        if int(conn.hget(user.name, "point")) < 3:
             reply = f"{message.author.mention} {point_name}が足りません。"
         else:
             rarity, t = play_gacha()
@@ -185,14 +162,14 @@ async def gacha(args, message):
 
     if args[1] == "info":
         reply = f"{message.author.mention}\n"
-        point = signups[user.name]["point"]
+        point = conn.hget(user.name, "point")
         reply += f"{point_name}: {point}"
         await message.channel.send(reply)
         return
 
     if args[1] == "10":
         reply = f"{message.author.mention}"
-        if signups[user.name]["point"] < 30:
+        if int(conn.hget(user.name, "point")) < 30:
             reply += f" {point_name}が足りません。"
         else:
             for i in range(11):
@@ -227,7 +204,7 @@ async def on_message(message):
         return
 
     # give point
-    if message.author.name in signups:
+    if conn.exists(message.author.name) != 0:
         await give_point(message.author, 1)
 
     # anagram
@@ -263,5 +240,6 @@ async def on_message(message):
             digits = ""
         cnt += 1
     m = m[:-1]
-    
+
 client.run(TOKEN)
+conn.flushall()
